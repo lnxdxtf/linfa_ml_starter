@@ -2,7 +2,7 @@ use csv::{ReaderBuilder, StringRecord, Trim, WriterBuilder};
 use linfa::Dataset;
 use linfa_datasets::array_from_csv;
 use ndarray::{s, Array1, Ix1};
-use plotters::prelude::*;
+use plotters::{prelude::*, style::full_palette::PURPLE_500};
 use std::error::Error;
 
 pub fn fill_empty_fields(
@@ -43,16 +43,18 @@ pub fn build_dataset(
     file: &str,
     feature_names: Vec<&str>,
 ) -> Result<Dataset<f64, f64, Ix1>, Box<dyn Error>> {
-    println!("{}", feature_names.len());
     let arr = array_from_csv(std::fs::File::open(file)?, true, b',')?;
-    let (mut data, targets) = (
+    let (data, targets) = (
         arr.slice(s![.., 0..feature_names.len()]).to_owned(),
-        arr.column(feature_names.len()-1).to_owned(),
+        arr.column(feature_names.len() - 1).to_owned(),
     );
     let dt = Dataset::new(data, targets).with_feature_names(feature_names.clone());
     println!("Dataset shape dim: {:?}", dt.records.dim());
-    println!("Features names: {:?} | len: {:?}", dt.feature_names(), feature_names.len());
-    dt.records.column(9);
+    println!(
+        "Features names: {:?} | len: {:?}",
+        dt.feature_names(),
+        feature_names.len()
+    );
     Ok(dt)
 }
 pub fn plot(
@@ -65,7 +67,6 @@ pub fn plot(
     let root = BitMapBackend::new(output.as_str(), (640, 480)).into_drawing_area();
     root.fill(&WHITE)?;
 
-    let feature_names = dataset.feature_names(); // Supondo que você tenha nomes de características definidos
     let caption = format!("{} vs {}", feature_x, feature_y);
     let mut chart = ChartBuilder::on(&root)
         .caption(caption, ("sans-serif", 20).into_font())
@@ -104,10 +105,9 @@ pub fn plot(
     chart.draw_series(PointSeries::of_element(
         axis_x_values.into_iter().zip(axis_y_values.into_iter()),
         1,
-        &RED,
+        &PURPLE_500,
         &|c, s, st| {
-            return EmptyElement::at(c)    // We want to construct a composed element on-the-fly
-            + Circle::new((0,0),s,st.filled()); // At this point, the new pixel coordinate is established
+            return EmptyElement::at(c) + Circle::new((0, 0), s, st.filled());
         },
     ))?;
 
